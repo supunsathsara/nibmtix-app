@@ -1,0 +1,92 @@
+import { useEffect, useState } from "react";
+import { View, Text, ActivityIndicator, Image } from "react-native";
+import { supabase } from "../../utils/supabase";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Loader from "../components/Loader";
+import { images } from "../../constants";
+
+const Home = () => {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [eventData, setEventData] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const fetchData = async () => {
+      const { data, error } = await supabase
+        .from("event_dashboard")
+        .select("*")
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116" || error.code === "22P02") {
+          console.error("No data found or invalid input:", error.message);
+        } else {
+          console.error("Error fetching data:", error.message);
+        }
+      } else {
+        console.log("Fetched data:", data);
+        setEventData(data.event_dashboard);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView className="bg-primary">
+        <Loader isLoading={loading} />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="bg-primary flex-1">
+      <View className="flex my-6 px-4 space-y-6">
+        {session && session.user && (
+          <View className="flex justify-between items-start flex-row mb-6">
+            <View>
+              <Text className="font-medium text-sm text-gray-100">
+                Welcome Back
+              </Text>
+              <Text className="text-xl font-semibold text-white">
+                {session.user.email}
+              </Text>
+            </View>
+
+            <View className="mt-1.5">
+              <Image
+                source={images.logoSmall}
+                className="w-9 h-10 mr-4"
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        )}
+        {eventData && (    
+            <View className="w-full">
+              <Text className="text-4xl text-white font-regular">
+                {eventData.event_name.toUpperCase()}
+              </Text>
+              <Text className="text-lg text-gray-100">
+                {eventData.attended_people} people attended
+              </Text>
+            </View>
+           
+        )}
+      </View>
+    </SafeAreaView>
+  );
+};
+
+export default Home;
