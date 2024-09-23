@@ -13,7 +13,8 @@
       "backgroundColor": "#000319"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.supunsathsara.nibmtix"
     },
     "android": {
       "adaptiveIcon": {
