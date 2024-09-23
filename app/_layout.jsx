@@ -1,10 +1,12 @@
 import { Slot } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
 const RootLayout = () => {
   return (
-
+    <>
+      <StatusBar style="light" />
       <Slot name="index" />
-
+    </>
   );
 };
 export default RootLayout;

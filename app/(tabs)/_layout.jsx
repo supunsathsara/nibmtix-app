@@ -66,6 +66,16 @@ const TabLayout = () => {
           }}
         />
         <Tabs.Screen
+          name="tickets"
+          options={{
+            title: "Tickets",
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name="ticket-outline" size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="profile"
           options={{
             title: "Profile",
