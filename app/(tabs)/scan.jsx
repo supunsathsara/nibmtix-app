@@ -1,11 +1,21 @@
-import { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Alert, Image } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Camera, CameraView, useCameraPermissions } from "expo-camera";
-import { supabase } from "../../utils/supabase";
 import { images } from "../../constants";
+import { supabase } from "../../utils/supabase";
 
-
+// A separate button component for scanning options
+const ScanOptionButton = ({ title, selected, onPress }) => (
+  <TouchableOpacity
+    className={`p-3 mx-2 rounded-full ${
+      selected ? "bg-[#6247AA] shadow-lg" : "bg-gray-700"
+    }`}
+    onPress={onPress}
+  >
+    <Text className="text-white text-base">{title}</Text>
+  </TouchableOpacity>
+);
 
 const Scan = () => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -19,6 +29,7 @@ const Scan = () => {
     requestPermission();
   }, []);
 
+  // Unified function to handle scanning logic
   const handleBarCodeScanned = async (data) => {
     if (isProcessing) return;
 
@@ -26,86 +37,51 @@ const Scan = () => {
     setIsProcessing(true);
 
     try {
-
       if (selectedOption === null) {
-        throw new Error("Please select an option to scan");
+        throw new Error("Please select an option to scan.");
       }
 
-      if(selectedOption === "attendance"){
+      let fieldToUpdate;
+      let successMessage;
 
-      const arrival = new Date().toISOString();
+      // Determine what to update based on selected option
+      switch (selectedOption) {
+        case "attendance":
+          fieldToUpdate = { attendance: 1, arrival: new Date().toISOString() };
+          successMessage = "Marked as Attended";
+          break;
+        case "lunch":
+          fieldToUpdate = { lunch: 1 };
+          successMessage = "Marked as Lunch Collected";
+          break;
+        case "refreshments":
+          fieldToUpdate = { refreshments: 1 };
+          successMessage = "Marked as Refreshments Collected";
+          break;
+        default:
+          throw new Error("Invalid option selected.");
+      }
+
+      // Update ticket in Supabase
       const { data: ticketData, error } = await supabase
         .from("tickets")
-        .update({ attendance: 1, arrival: arrival })
+        .update(fieldToUpdate)
         .eq("id", data)
-        .eq("attendance", 0)
+        .eq(Object.keys(fieldToUpdate)[0], 0)
         .select();
 
-      if (error) {
-        console.error(error);
-        throw new Error("An error occurred while activating ticket");
-      }
+      if (error) throw new Error("Error occurred while updating the ticket.");
+      if (ticketData.length === 0) throw new Error("Ticket not found or already scanned.");
 
-      if (ticketData.length === 0) {
-        throw new Error("Ticket not found or already scanned");
-      }
+      Alert.alert("Success", successMessage);
 
-      Alert.alert("Ticket Valid", "Marked as Attended");
-    }
-    else if(selectedOption === "lunch"){
-      const { data: ticketData, error } = await supabase
-        .from("tickets")
-        .update({ lunch: 1 })
-        .eq("id", data)
-        .eq("lunch", 0)
-        .select();
-
-      if (error) {
-        console.error(error);
-        throw new Error("An error occurred while activating ticket");
-      }
-
-      if (ticketData.length === 0) {
-        throw new Error("Ticket not found or already scanned");
-      }
-
-      Alert.alert("Ticket Valid", "Marked as Lunch Collected");
-
-    }
-
-    else if(selectedOption === "refreshments"){
-      const { data: ticketData, error } = await supabase
-        .from("tickets")
-        .update({ refreshments: 1 })
-        .eq("id", data)
-        .eq("refreshments", 0)
-        .select();
-
-      if (error) {
-        console.error(error);
-        throw new Error("An error occurred while activating ticket");
-      }
-
-      if (ticketData.length === 0) {
-        throw new Error("Ticket not found or already scanned");
-      }
-
-      Alert.alert("Ticket Valid", "Marked as Refreshments Collected");
-
-    }
-
-      // if (ticketData[0].status === 1) {
-      //   Alert.alert("Ticket Invalid", "This ticket is invalid.");
-      // } else {
-      //   
-      // }
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
       setTimeout(() => {
         setScanned(false);
         setIsProcessing(false);
-      }, 3000); // Wait time of 3 seconds before allowing another scan
+      }, 1000);
     }
   };
 
@@ -113,14 +89,9 @@ const Scan = () => {
     return (
       <SafeAreaView className="bg-primary h-full">
         <View className="flex justify-center items-center h-full p-4">
-          <Text className="text-white justify-center mb-4">
-            Requesting for camera permission
-          </Text>
-          <TouchableOpacity
-            className="p-2 m-2 rounded bg-gray-700"
-            onPress={requestPermission}
-          >
-            <Text className="text-white">Request Access</Text>
+          <Text className="text-white mb-4">Requesting camera permission...</Text>
+          <TouchableOpacity className="p-2 rounded bg-gray-700" onPress={requestPermission}>
+            <Text className="text-white">Grant Camera Access</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -130,62 +101,46 @@ const Scan = () => {
   return (
     <SafeAreaView className="bg-primary h-full">
       <View className="flex justify-center items-center h-full p-4">
-      <Image
-                source={images.logoH}
-                className="h-10  mr-4 mb-5"
-                resizeMode="contain"
-              />
-        <Text className="text-white text-2xl mb-4">
-          Scan QR Code
-        </Text>
-        <View className="flex flex-row mb-4">
-          <TouchableOpacity
-            className={`p-2 m-2 rounded ${
-              selectedOption === "attendance" ? "bg-blue-500" : "bg-gray-700"
-            }`}
-            onPress={() => setSelectedOption("attendance")}
-          >
-            <Text className="text-white">Attendance</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`p-2 m-2 rounded ${
-              selectedOption === "lunch" ? "bg-blue-500" : "bg-gray-700"
-            }`}
-            onPress={() => setSelectedOption("lunch")}
-          >
-            <Text className="text-white">Lunch</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`p-2 m-2 rounded ${
-              selectedOption === "refreshments" ? "bg-blue-500" : "bg-gray-700"
-            }`}
-            onPress={() => setSelectedOption("refreshments")}
-          >
-            <Text className="text-white">Refreshments</Text>
-          </TouchableOpacity>
-        </View>
-        <CameraView
-        facing="back"
-        style={{ width: 400, height: 400 }}
-         onBarcodeScanned={({ data }) => {
-          handleBarCodeScanned(data);
-        }}
-          
+        <Image source={images.logoH} className="h-10 mb-5" resizeMode="contain" />
+        <Text className="text-white text-2xl mb-6">Scan QR Code</Text>
 
+        {/* Scan Option Buttons */}
+        <View className="flex flex-row mb-6">
+          <ScanOptionButton
+            title="Attendance"
+            selected={selectedOption === "attendance"}
+            onPress={() => setSelectedOption("attendance")}
+          />
+          <ScanOptionButton
+            title="Lunch"
+            selected={selectedOption === "lunch"}
+            onPress={() => setSelectedOption("lunch")}
+          />
+          <ScanOptionButton
+            title="Refreshments"
+            selected={selectedOption === "refreshments"}
+            onPress={() => setSelectedOption("refreshments")}
+          />
+        </View>
+
+        {/* Camera View */}
+        <CameraView
+          facing="back"
+          style={{ width: 400, height: 400, borderRadius: 16, overflow: "hidden" }}
+          onBarcodeScanned={({ data }) => !scanned && handleBarCodeScanned(data)}
         />
 
-        {/* FOR DEBUG - MANUALLY CALL ON BUTTON PRESS */}
-        {/* <TouchableOpacity
-          onPress={() => handleBarCodeScanned("b71aa4fd-7df3-40cb-bb10-f08a6cda5a1a")}
-          className="p-2 m-2 rounded bg-gray-700"
-        >
-          <Text className="text-white">Scan</Text>
-        </TouchableOpacity> */}
+        {/* Scanning feedback */}
+        {isProcessing && (
+          <View className="absolute inset-0 justify-center items-center">
+            <ActivityIndicator size="large" color="#fff" />
+            <Text className="text-white mt-4">Processing...</Text>
+          </View>
+        )}
+
+        {/* Rescan button if scanned */}
         {scanned && (
-          <TouchableOpacity
-            onPress={() => setScanned(false)}
-            className="p-2 m-2 rounded bg-gray-700"
-          >
+          <TouchableOpacity onPress={() => setScanned(false)} className="p-3 mt-4 rounded bg-gray-700">
             <Text className="text-white">Tap to Scan Again</Text>
           </TouchableOpacity>
         )}
