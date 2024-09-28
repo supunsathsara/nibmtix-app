@@ -52,7 +52,7 @@ export default function App() {
           />
 
           <Image
-            source={images.cards}
+            source={images.welcome}
             className="max-w-[380px] w-full h-[298px]"
             resizeMode="contain"
           />
