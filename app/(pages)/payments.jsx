@@ -142,6 +142,10 @@ const Payments = () => {
     }
   };
 
+  const openInBrowser = async (url) => {
+    await Linking.openURL(url);
+  };
+
   // Render payment items
   const renderPaymentItem = ({ item }) => {
     return (
@@ -154,7 +158,7 @@ const Payments = () => {
           Date: {new Date(item.created_at).toLocaleString()}
         </Text>
         <TouchableOpacity
-          onPress={() => handleDownloadReceipt(item.receipt_url)}
+          onPress={() => openInBrowser(item.receipt_url)}
           className="mt-2"
         >
           <Text className="text-blue-400 text-base">Download Receipt</Text>
