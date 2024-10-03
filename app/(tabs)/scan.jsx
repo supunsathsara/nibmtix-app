@@ -67,6 +67,7 @@ const Scan = () => {
         .from("tickets")
         .update(fieldToUpdate)
         .eq("id", data)
+        .eq("status", 1)
         .eq(Object.keys(fieldToUpdate)[0], 0)
         .select();
 

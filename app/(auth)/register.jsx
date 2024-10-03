@@ -6,6 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { images } from "../../constants";
 import FormField from "../components/FormField";
 import CustomButton from "../components/CustomButton";
+import { supabase } from "../../utils/supabase";
+import { makeRedirectUri } from "expo-auth-session";
 const Register = () => {
   const [isSubmitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -16,15 +18,38 @@ const Register = () => {
   });
 
   const submit = async () => {
-    if (form.username === "" || form.email === "" || form.password === "") {
+    if (
+      form.username === "" ||
+      form.mobile === "" ||
+      form.email === "" ||
+      form.password === ""
+    ) {
       Alert.alert("Error", "Please fill in all fields");
     }
 
     setSubmitting(true);
     try {
       console.log(form);
+      const redirectTo = makeRedirectUri();
+      const { error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          emailRedirectTo: `${redirectTo}/auth`,
+          data: {
+            role: "event-manager",
+            mobile: form.mobile,
+            full_name: form.username,
+          },
+        },
+      });
 
-      router.replace("/home");
+      if (error) {
+        throw error;
+      }
+      Alert.alert("Success", "Please check your email to verify your account");
+      
+      router.replace("/login");
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
