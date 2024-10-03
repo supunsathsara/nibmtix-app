@@ -12,11 +12,12 @@ const RevenueLineChart = ({ lineData, ticketPrice }) => {
     weekData = Array.from({ length: 7 }, (_, i) => {
       const date = addDays(startDate, i);
       return {
-        date: date.toISOString(),
-        day: format(date, "EEE"),
-        revenue: 0,
+        label: format(date, "EEE"),
+        value: 0,
+        dataPointText: "0",
       };
     });
+    weekData.push({ label: "*", value: 10, dataPointText: "0" });
   } else {
     // Parse the first date and determine the day of the week
     const firstDate = parseISO(lineData[0].date);

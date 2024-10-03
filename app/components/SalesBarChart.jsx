@@ -3,6 +3,7 @@ import { BarChart } from "react-native-gifted-charts";
 import { format, startOfWeek, addDays, getDay, parseISO, Day } from "date-fns";
 
 const SalesBarChart = ({ barData }) => {
+  let weekData = [];
   if (!barData || barData.length === 0) {
     // Create a default weekData array with 0 tickets sold for all days
     const today = new Date();
@@ -12,11 +13,12 @@ const SalesBarChart = ({ barData }) => {
     weekData = Array.from({ length: 7 }, (_, i) => {
       const date = addDays(startDate, i);
       return {
-        date: date.toISOString(),
-        day: format(date, "EEE"),
-        tickets_sold: 0,
+        label: format(date, "EEE"),
+        value: 0,
       };
     });
+
+    weekData.push({ label: "*", value: 10 });
   } else {
     // Parse the first date and determine the day of the week
     const firstDate = parseISO(barData[0].date);
